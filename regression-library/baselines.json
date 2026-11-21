@@ -1,0 +1,1159 @@
+{
+  "vr-idor-api_invoices_1001": {
+    "result": {
+      "state": "vulnerable",
+      "error": null,
+      "started_at": "2026-11-21T16:23:25.235622+00:00",
+      "finished_at": "2026-11-21T16:23:25.248143+00:00",
+      "request_count": 4,
+      "steps": [
+        {
+          "id": "login_owner",
+          "name": "authenticate owner",
+          "role": "setup",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/login",
+              "status": 200,
+              "duration_ms": 4.8,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "73",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"access_token\":\"[REDACTED]\",\"token_type\":\"bearer\"}",
+              "body_length": 73,
+              "json": {
+                "access_token": "[REDACTED]",
+                "token_type": "bearer"
+              }
+            }
+          ],
+          "expectations": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "passed": true,
+              "detail": "status 200"
+            }
+          ],
+          "assertions": [],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "id": "owner_access",
+          "name": "owner reads own resource",
+          "role": "setup",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/invoices/1001",
+              "status": 200,
+              "duration_ms": 3.0,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "134",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"id\":1001,\"owner\":\"[REDACTED]\",\"owner_email\":\"[REDACTED]@lab.vulnreplay.test\",\"amount\":1250.0,\"card_last4\":\"4242\",\"memo\":\"Synthetic invoice A\"}",
+              "body_length": 134,
+              "json": {
+                "id": 1001,
+                "owner": "[REDACTED]",
+                "owner_email": "[REDACTED]@lab.vulnreplay.test",
+                "amount": 1250.0,
+                "card_last4": "4242",
+                "memo": "Synthetic invoice A"
+              }
+            }
+          ],
+          "expectations": [
+            {
+              "type": "status_in",
+              "description": "owner can read the resource",
+              "passed": true,
+              "detail": "status 200"
+            }
+          ],
+          "assertions": [],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "id": "login_attacker",
+          "name": "authenticate attacker",
+          "role": "setup",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/login",
+              "status": 200,
+              "duration_ms": 2.0,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "73",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"access_token\":\"[REDACTED]\",\"token_type\":\"bearer\"}",
+              "body_length": 73,
+              "json": {
+                "access_token": "[REDACTED]",
+                "token_type": "bearer"
+              }
+            }
+          ],
+          "expectations": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "passed": true,
+              "detail": "status 200"
+            }
+          ],
+          "assertions": [],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "id": "cross_user_access",
+          "name": "other user attempts access",
+          "role": "probe",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/invoices/1001",
+              "status": 200,
+              "duration_ms": 1.6,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "134",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"id\":1001,\"owner\":\"[REDACTED]\",\"owner_email\":\"[REDACTED]@lab.vulnreplay.test\",\"amount\":1250.0,\"card_last4\":\"4242\",\"memo\":\"Synthetic invoice A\"}",
+              "body_length": 134,
+              "json": {
+                "id": 1001,
+                "owner": "[REDACTED]",
+                "owner_email": "[REDACTED]@lab.vulnreplay.test",
+                "amount": 1250.0,
+                "card_last4": "4242",
+                "memo": "Synthetic invoice A"
+              }
+            }
+          ],
+          "expectations": [],
+          "assertions": [
+            {
+              "type": "status_in",
+              "description": "access to another principal's resource is denied",
+              "passed": false,
+              "detail": "status 200"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #1 is not returned",
+              "passed": false,
+              "detail": "sensitive value present in response body"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #2 is not returned",
+              "passed": false,
+              "detail": "sensitive value present in response body"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #3 is not returned",
+              "passed": false,
+              "detail": "sensitive value present in response body"
+            },
+            {
+              "type": "json_path_absent",
+              "description": "field 'owner' is not returned",
+              "passed": false,
+              "detail": "present ([REDACTED])"
+            },
+            {
+              "type": "json_path_absent",
+              "description": "field 'owner_email' is not returned",
+              "passed": false,
+              "detail": "present ([REDACTED]@lab.vulnreplay.test)"
+            },
+            {
+              "type": "json_path_absent",
+              "description": "field 'card_last4' is not returned",
+              "passed": false,
+              "detail": "present (4242)"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "value read by the owner in the control request is not exposed",
+              "passed": false,
+              "detail": "sensitive value present in response body"
+            }
+          ],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "summary": {
+        "assertions_total": 8,
+        "assertions_passed": 0
+      },
+      "log": [
+        "16:23:25.235 step login_owner (setup) started",
+        "16:23:25.240 POST http://localhost:8001/api/login -> 200 (5 ms)",
+        "16:23:25.240 step owner_access (setup) started",
+        "16:23:25.243 GET http://localhost:8001/api/invoices/1001 -> 200 (3 ms)",
+        "16:23:25.244 step login_attacker (setup) started",
+        "16:23:25.246 POST http://localhost:8001/api/login -> 200 (2 ms)",
+        "16:23:25.246 step cross_user_access (probe) started",
+        "16:23:25.247 GET http://localhost:8001/api/invoices/1001 -> 200 (2 ms)"
+      ]
+    },
+    "verified": true
+  },
+  "vr-security_headers-health": {
+    "result": {
+      "state": "vulnerable",
+      "error": null,
+      "started_at": "2026-11-21T16:23:25.255138+00:00",
+      "finished_at": "2026-11-21T16:23:25.257194+00:00",
+      "request_count": 1,
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "requests": [
+            {
+              "url": "http://localhost:8001/health",
+              "status": 200,
+              "duration_ms": 1.8,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "35",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"ok\",\"mode\":\"vulnerable\"}",
+              "body_length": 35,
+              "json": {
+                "status": "ok",
+                "mode": "vulnerable"
+              }
+            }
+          ],
+          "expectations": [],
+          "assertions": [
+            {
+              "type": "header_present",
+              "description": "Strict-Transport-Security header is set",
+              "passed": false,
+              "detail": "missing"
+            },
+            {
+              "type": "header_present",
+              "description": "Content-Security-Policy header is set",
+              "passed": false,
+              "detail": "missing"
+            },
+            {
+              "type": "header_present",
+              "description": "X-Content-Type-Options header is set",
+              "passed": false,
+              "detail": "missing"
+            },
+            {
+              "type": "header_present",
+              "description": "X-Frame-Options header is set",
+              "passed": false,
+              "detail": "missing"
+            },
+            {
+              "type": "header_present",
+              "description": "Referrer-Policy header is set",
+              "passed": false,
+              "detail": "missing"
+            }
+          ],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "summary": {
+        "assertions_total": 5,
+        "assertions_passed": 0
+      },
+      "log": [
+        "16:23:25.255 step step_1 (probe) started",
+        "16:23:25.257 GET http://localhost:8001/health -> 200 (2 ms)"
+      ]
+    },
+    "verified": true
+  },
+  "vr-rate_limiting-api_password_reset": {
+    "result": {
+      "state": "vulnerable",
+      "error": null,
+      "started_at": "2026-11-21T16:23:25.262865+00:00",
+      "finished_at": "2026-11-21T16:23:25.290817+00:00",
+      "request_count": 12,
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.8,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.6,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.4,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.9,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.6,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.6,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.5,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.6,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.7,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.5,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 8.2,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            },
+            {
+              "url": "http://localhost:8001/api/password-reset",
+              "status": 200,
+              "duration_ms": 1.9,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "53",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"status\":\"if the account exists, an email was sent\"}",
+              "body_length": 53,
+              "json": {
+                "status": "if the account exists, an email was sent"
+              }
+            }
+          ],
+          "expectations": [],
+          "assertions": [
+            {
+              "type": "sequence_any_status_in",
+              "description": "throttling (HTTP 429) is enforced within 12 requests",
+              "passed": false,
+              "detail": "statuses [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]"
+            }
+          ],
+          "error": null,
+          "statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ]
+        }
+      ],
+      "summary": {
+        "assertions_total": 1,
+        "assertions_passed": 0
+      },
+      "log": [
+        "16:23:25.262 step step_1 (probe) started",
+        "16:23:25.264 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.266 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.267 POST http://localhost:8001/api/password-reset -> 200 (1 ms)",
+        "16:23:25.269 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.271 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.273 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.275 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.276 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.278 POST http://localhost:8001/api/password-reset -> 200 (2 ms)",
+        "16:23:25.280 POST http://localhost:8001/api/password-reset -> 200 (1 ms)",
+        "16:23:25.288 POST http://localhost:8001/api/password-reset -> 200 (8 ms)",
+        "16:23:25.290 POST http://localhost:8001/api/password-reset -> 200 (2 ms)"
+      ]
+    },
+    "verified": true
+  },
+  "vr-sql_injection-api_products": {
+    "result": {
+      "state": "vulnerable",
+      "error": null,
+      "started_at": "2026-11-21T16:23:25.298817+00:00",
+      "finished_at": "2026-11-21T16:23:25.301220+00:00",
+      "request_count": 1,
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/products",
+              "status": 500,
+              "duration_ms": 2.2,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "63",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"error\":\"sqlite3.OperationalError: unrecognized token: \\\"'\\\"\"}",
+              "body_length": 63,
+              "json": {
+                "error": "sqlite3.OperationalError: unrecognized token: \"'\""
+              }
+            }
+          ],
+          "expectations": [],
+          "assertions": [
+            {
+              "type": "status_not_in",
+              "description": "no server error on injected input",
+              "passed": false,
+              "detail": "status 500"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'SQL syntax'",
+              "passed": true,
+              "detail": "absent"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'SQLSTATE'",
+              "passed": true,
+              "detail": "absent"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'sqlite3.OperationalError'",
+              "passed": false,
+              "detail": "sensitive value present in response body"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'unterminated quoted string'",
+              "passed": true,
+              "detail": "absent"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'ORA-01756'",
+              "passed": true,
+              "detail": "absent"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'psycopg'",
+              "passed": true,
+              "detail": "absent"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'Unclosed quotation mark'",
+              "passed": true,
+              "detail": "absent"
+            }
+          ],
+          "error": null,
+          "statuses": [
+            500
+          ]
+        }
+      ],
+      "summary": {
+        "assertions_total": 8,
+        "assertions_passed": 6
+      },
+      "log": [
+        "16:23:25.298 step step_1 (probe) started",
+        "16:23:25.301 GET http://localhost:8001/api/products -> 500 (2 ms)"
+      ]
+    },
+    "verified": true
+  },
+  "vr-cors_misconfiguration-api_profile": {
+    "result": {
+      "state": "vulnerable",
+      "error": null,
+      "started_at": "2026-11-21T16:23:25.306739+00:00",
+      "finished_at": "2026-11-21T16:23:25.308980+00:00",
+      "request_count": 1,
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/profile",
+              "status": 401,
+              "duration_ms": 2.0,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "36",
+                "content-type": "application/json",
+                "access-control-allow-origin": "https://untrusted-origin.vulnreplay.invalid",
+                "access-control-allow-credentials": "true",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"detail\":\"authentication required\"}",
+              "body_length": 36,
+              "json": {
+                "detail": "authentication required"
+              }
+            }
+          ],
+          "expectations": [],
+          "assertions": [
+            {
+              "type": "header_not_equals",
+              "description": "untrusted origin is not reflected",
+              "passed": false,
+              "detail": "value 'https://untrusted-origin.vulnreplay.invalid'"
+            },
+            {
+              "type": "header_not_equals",
+              "description": "wildcard origin is not allowed",
+              "passed": true,
+              "detail": "value 'https://untrusted-origin.vulnreplay.invalid'"
+            }
+          ],
+          "error": null,
+          "statuses": [
+            401
+          ]
+        }
+      ],
+      "summary": {
+        "assertions_total": 2,
+        "assertions_passed": 1
+      },
+      "log": [
+        "16:23:25.306 step step_1 (probe) started",
+        "16:23:25.308 GET http://localhost:8001/api/profile -> 401 (2 ms)"
+      ]
+    },
+    "verified": true
+  },
+  "vr-authorization_bypass-api_admin_users": {
+    "result": {
+      "state": "vulnerable",
+      "error": null,
+      "started_at": "2026-11-21T16:23:25.314693+00:00",
+      "finished_at": "2026-11-21T16:23:25.323347+00:00",
+      "request_count": 4,
+      "steps": [
+        {
+          "id": "login_owner",
+          "name": "authenticate owner",
+          "role": "setup",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/login",
+              "status": 200,
+              "duration_ms": 2.6,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "73",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"access_token\":\"[REDACTED]\",\"token_type\":\"bearer\"}",
+              "body_length": 73,
+              "json": {
+                "access_token": "[REDACTED]",
+                "token_type": "bearer"
+              }
+            }
+          ],
+          "expectations": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "passed": true,
+              "detail": "status 200"
+            }
+          ],
+          "assertions": [],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "id": "owner_access",
+          "name": "owner reads own resource",
+          "role": "setup",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/admin/users",
+              "status": 200,
+              "duration_ms": 1.7,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "211",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "[{\"username\":\"alice\",\"role\":\"user\",\"email\":\"alice@lab.vulnreplay.test\"},{\"username\":\"bob\",\"role\":\"user\",\"email\":\"bob@lab.vulnreplay.test\"},{\"username\":\"carol\",\"role\":\"admin\",\"email\":\"carol@lab.vulnreplay.test\"}]",
+              "body_length": 211,
+              "json": [
+                {
+                  "username": "alice",
+                  "role": "user",
+                  "email": "alice@lab.vulnreplay.test"
+                },
+                {
+                  "username": "bob",
+                  "role": "user",
+                  "email": "bob@lab.vulnreplay.test"
+                },
+                {
+                  "username": "carol",
+                  "role": "admin",
+                  "email": "carol@lab.vulnreplay.test"
+                }
+              ]
+            }
+          ],
+          "expectations": [
+            {
+              "type": "status_in",
+              "description": "owner can read the resource",
+              "passed": true,
+              "detail": "status 200"
+            }
+          ],
+          "assertions": [],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "id": "login_attacker",
+          "name": "authenticate attacker",
+          "role": "setup",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/login",
+              "status": 200,
+              "duration_ms": 1.8,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "73",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "{\"access_token\":\"[REDACTED]\",\"token_type\":\"bearer\"}",
+              "body_length": 73,
+              "json": {
+                "access_token": "[REDACTED]",
+                "token_type": "bearer"
+              }
+            }
+          ],
+          "expectations": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "passed": true,
+              "detail": "status 200"
+            }
+          ],
+          "assertions": [],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "id": "cross_user_access",
+          "name": "other user attempts access",
+          "role": "probe",
+          "requests": [
+            {
+              "url": "http://localhost:8001/api/admin/users",
+              "status": 200,
+              "duration_ms": 1.9,
+              "headers": {
+                "date": "Sat, 21 Nov 2026 16:23:24 GMT",
+                "server": "uvicorn",
+                "content-length": "211",
+                "content-type": "application/json",
+                "x-demo-mode": "vulnerable"
+              },
+              "security_headers": {
+                "strict-transport-security": false,
+                "content-security-policy": false,
+                "x-content-type-options": false,
+                "x-frame-options": false,
+                "referrer-policy": false,
+                "permissions-policy": false,
+                "cache-control": false
+              },
+              "body_preview": "[{\"username\":\"alice\",\"role\":\"user\",\"email\":\"alice@lab.vulnreplay.test\"},{\"username\":\"bob\",\"role\":\"user\",\"email\":\"bob@lab.vulnreplay.test\"},{\"username\":\"carol\",\"role\":\"admin\",\"email\":\"carol@lab.vulnreplay.test\"}]",
+              "body_length": 211,
+              "json": [
+                {
+                  "username": "alice",
+                  "role": "user",
+                  "email": "alice@lab.vulnreplay.test"
+                },
+                {
+                  "username": "bob",
+                  "role": "user",
+                  "email": "bob@lab.vulnreplay.test"
+                },
+                {
+                  "username": "carol",
+                  "role": "admin",
+                  "email": "carol@lab.vulnreplay.test"
+                }
+              ]
+            }
+          ],
+          "expectations": [],
+          "assertions": [
+            {
+              "type": "status_in",
+              "description": "access to another principal's resource is denied",
+              "passed": false,
+              "detail": "status 200"
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #1 is not returned",
+              "passed": false,
+              "detail": "sensitive value present in response body"
+            }
+          ],
+          "error": null,
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "summary": {
+        "assertions_total": 2,
+        "assertions_passed": 0
+      },
+      "log": [
+        "16:23:25.314 step login_owner (setup) started",
+        "16:23:25.317 POST http://localhost:8001/api/login -> 200 (3 ms)",
+        "16:23:25.317 step owner_access (setup) started",
+        "16:23:25.319 GET http://localhost:8001/api/admin/users -> 200 (2 ms)",
+        "16:23:25.319 step login_attacker (setup) started",
+        "16:23:25.321 POST http://localhost:8001/api/login -> 200 (2 ms)",
+        "16:23:25.321 step cross_user_access (probe) started",
+        "16:23:25.323 GET http://localhost:8001/api/admin/users -> 200 (2 ms)"
+      ]
+    },
+    "verified": true
+  }
+}
