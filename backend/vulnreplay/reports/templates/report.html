@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VulnReplay report — {{ r.vulnerability.title }}</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; color: #1d2330; background: #fff; }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 32px 0 8px; border-bottom: 1px solid #e3e6ec; padding-bottom: 6px; }
+  .meta { color: #5b6475; font-size: 13px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .vulnerability_reproduced, .regression_detected { background: #fde8e8; color: #9b1c1c; }
+  .remediation_verified { background: #def7ec; color: #03543f; }
+  .inconclusive, .not_run { background: #fdf6b2; color: #723b13; }
+  .execution_failed { background: #e5e7eb; color: #374151; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eef0f4; vertical-align: top; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  pre { background: #f6f8fa; padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .hash { color: #5b6475; font-size: 11px; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <p class="meta">VulnReplay security regression report · {{ r.project.name }} · generated {{ r.generated_at }}</p>
+  <h1>{{ r.vulnerability.title }}</h1>
+  <p>
+    <span class="badge {{ r.remediation_verification.status }}">{{ r.remediation_verification.label }}</span>
+    <span class="meta">Category: {{ r.vulnerability.category }} · Severity: {{ r.vulnerability.severity }}{% if r.vulnerability.cwe %} · {{ r.vulnerability.cwe }}{% endif %}</span>
+  </p>
+  {% if r.vulnerability.description %}<p>{{ r.vulnerability.description }}</p>{% endif %}
+
+  <h2>Original evidence</h2>
+  <p class="meta">{{ r.original_evidence.filename }} ({{ r.original_evidence.format }})</p>
+  <p class="hash">SHA-256 {{ r.original_evidence.sha256 }}</p>
+  <table>
+    <tr><th>#</th><th>Request</th><th>Status</th></tr>
+    {% for ex in r.original_evidence.exchanges %}
+    <tr><td>{{ ex.index }}</td><td><code>{{ ex.method }} {{ ex.url }}</code></td><td>{{ ex.response.status if ex.response else "—" }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Reproduction steps</h2>
+  <ol>{% for s in r.reproduction_steps %}<li>{{ s }}</li>{% endfor %}</ol>
+
+  <h2>Test executions</h2>
+  <table>
+    <tr><th>When</th><th>Label</th><th>Target</th><th>Result</th><th>Assertions</th></tr>
+    {% for e in r.executions %}
+    <tr>
+      <td>{{ e.created_at }}</td><td>{{ e.label or "—" }}{% if e.is_baseline %} <strong>(baseline)</strong>{% endif %}</td>
+      <td>{{ e.target }}</td>
+      <td><span class="badge {{ e.classification }}">{{ labels.get(e.classification, e.classification) }}</span>
+        {% if e.reasons %}<ul>{% for reason in e.reasons[:5] %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}</td>
+      <td>{{ e.summary.assertions_passed if e.summary else 0 }}/{{ e.summary.assertions_total if e.summary else 0 }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <h2>Before / after comparison</h2>
+  {% set comp = r.before_after.comparison %}
+  {% if comp %}
+  <ul>{% for s in comp.signals %}<li>{{ s }}</li>{% endfor %}</ul>
+  {% if comp.status_only_change %}<p><strong>Only the status code changed.</strong> This alone does not prove remediation.</p>{% endif %}
+  {% else %}<p class="meta">No comparison available yet.</p>{% endif %}
+
+  <h2>Remaining risks</h2>
+  <ul>{% for x in r.remaining_risks %}<li>{{ x }}</li>{% endfor %}</ul>
+
+  <h2>Recommendations</h2>
+  <ul>{% for x in r.recommendations %}<li>{{ x }}</li>{% endfor %}</ul>
+
+  <h2>Integrity</h2>
+  <p class="hash">Test {{ r.test.id }} v{{ r.test.version }} · definition SHA-256 {{ r.test.definition_sha256 }}</p>
+  {% for e in r.executions %}<p class="hash">Execution {{ e.id }} result SHA-256 {{ e.result_sha256 }}</p>{% endfor %}
+  <p class="hash">Report SHA-256 {{ r.report_sha256 }}</p>
+</main>
+</body>
+</html>
