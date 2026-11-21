@@ -1,0 +1,138 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vulnreplay
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: vulnreplay_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vulnreplay" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Ruff
+        run: ruff check . && ruff format --check .
+      - name: Mypy
+        run: mypy
+      - name: Bandit
+        run: bandit -c pyproject.toml -r vulnreplay
+      - name: Pytest (SQLite)
+        run: pytest
+      - name: Pytest (PostgreSQL)
+        env:
+          VULNREPLAY_TEST_DATABASE_URL: postgresql+psycopg://vulnreplay:ci-only-password@localhost:5432/vulnreplay_test
+        run: pytest
+      - name: Alembic migrations
+        env:
+          VULNREPLAY_DATABASE_URL: postgresql+psycopg://vulnreplay:ci-only-password@localhost:5432/vulnreplay_test
+        run: |
+          python - <<'PY'
+          from sqlalchemy import create_engine, text
+          with create_engine("postgresql+psycopg://vulnreplay:ci-only-password@localhost:5432/vulnreplay_test").begin() as c:
+              c.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public"))
+          PY
+          alembic upgrade head && alembic check
+      - name: pip-audit (project dependencies only)
+        run: |
+          python -m venv /tmp/audit && /tmp/audit/bin/pip install -q . pip-audit
+          /tmp/audit/bin/pip-audit -l --skip-editable
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=moderate
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vulnreplay
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: vulnreplay
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vulnreplay" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      VULNREPLAY_ENVIRONMENT: production
+      VULNREPLAY_DATABASE_URL: postgresql+psycopg://vulnreplay:ci-only-password@localhost:5432/vulnreplay
+      VULNREPLAY_ADMIN_EMAIL: admin@vulnreplay.local
+      VULNREPLAY_CORS_ORIGINS: '["http://localhost:8080"]'
+      VULNREPLAY_ALLOWED_HOSTS: '["localhost","127.0.0.1"]'
+      VULNREPLAY_SECRET_OWNER_USERNAME: alice
+      VULNREPLAY_SECRET_OWNER_PASSWORD: alice-lab-password
+      VULNREPLAY_SECRET_ATTACKER_USERNAME: bob
+      VULNREPLAY_SECRET_ATTACKER_PASSWORD: bob-lab-password
+      VULNREPLAY_SECRET_CAROL_PASSWORD: carol-lab-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate per-run secrets
+        run: |
+          echo "VULNREPLAY_SECRET_KEY=$(python -c 'import secrets;print(secrets.token_urlsafe(48))')" >> "$GITHUB_ENV"
+          PW=$(python -c 'import secrets;print(secrets.token_urlsafe(18))'); echo "::add-mask::$PW"
+          echo "VULNREPLAY_ADMIN_PASSWORD=$PW" >> "$GITHUB_ENV"
+      - name: Start backend and lab apps
+        run: |
+          pip install ./backend
+          (cd backend && alembic upgrade head && nohup uvicorn vulnreplay.main:app --port 8000 > /tmp/backend.log 2>&1 &)
+          for m in vulnerable:8001 patched:8002 partial:8003; do
+            (cd lab/demo_app && DEMO_MODE=${m%%:*} nohup uvicorn app:app --port ${m##*:} > /tmp/demo-${m%%:*}.log 2>&1 &)
+          done
+          sleep 5 && curl -fsS localhost:8000/healthz
+      - name: Seed demo data through the API
+        run: VULNREPLAY_MIN_REQUEST_INTERVAL_MS=0 python scripts/seed_demo.py
+      - name: Build and serve frontend
+        working-directory: frontend
+        run: |
+          npm ci && npm run build
+          nohup npx vite preview --port 8080 --strictPort > /tmp/frontend.log 2>&1 &
+          npx playwright install --with-deps chromium
+      - name: Playwright E2E
+        working-directory: frontend
+        env:
+          E2E_PASSWORD: ${{ env.VULNREPLAY_ADMIN_PASSWORD }}
+        run: npx playwright test
+      - if: failure()
+        run: tail -n 100 /tmp/*.log
