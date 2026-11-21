@@ -1,0 +1,58 @@
+name: VulnReplay security regression tests
+description: Run a VulnReplay regression suite against an authorized target and fail on security regressions.
+branding:
+  icon: shield
+  color: blue
+inputs:
+  suite:
+    description: Path to the exported suite JSON
+    required: true
+  target-url:
+    description: Base URL of the authorized test environment
+    required: true
+  allowed-hosts:
+    description: JSON list of hosts the run may reach (defaults to localhost only)
+    default: '["localhost","127.0.0.1"]'
+  baseline:
+    description: Optional baseline JSON (per test id)
+    default: ""
+  fail-on:
+    description: Comma-separated classifications that fail the job
+    default: regression_detected,vulnerability_reproduced,execution_failed
+  select:
+    description: Optional comma-separated test ids, tags or categories
+    default: ""
+  json:
+    description: Path for JSON results
+    default: vulnreplay-results.json
+  sarif:
+    description: Path for SARIF results
+    default: vulnreplay.sarif
+  python-version:
+    default: "3.12"
+    description: Python version
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install VulnReplay
+      shell: bash
+      run: pip install "${{ github.action_path }}/backend"
+    - name: Run suite
+      shell: bash
+      env:
+        VULNREPLAY_ALLOWED_HOSTS: ${{ inputs.allowed-hosts }}
+        INPUT_SUITE: ${{ inputs.suite }}
+        INPUT_TARGET: ${{ inputs.target-url }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_SELECT: ${{ inputs.select }}
+        INPUT_JSON: ${{ inputs.json }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+      run: |
+        args=(run "$INPUT_SUITE" --target-url "$INPUT_TARGET" --fail-on "$INPUT_FAIL_ON" --json "$INPUT_JSON" --sarif "$INPUT_SARIF")
+        [ -n "$INPUT_BASELINE" ] && args+=(--baseline "$INPUT_BASELINE")
+        [ -n "$INPUT_SELECT" ] && args+=(--select "$INPUT_SELECT")
+        vulnreplay "${args[@]}"
