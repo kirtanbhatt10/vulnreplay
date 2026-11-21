@@ -1,0 +1,74 @@
+# Runs the saved VulnReplay regression library on every pull request.
+# In this repository the "application under test" is the patched demo app; the second job proves the
+# suite fails the build when the vulnerable build is deployed instead.
+name: security-regression
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  patched-build-must-pass:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start application under test
+        run: |
+          pip install "fastapi>=0.115" "uvicorn>=0.30"
+          (cd lab/demo_app && DEMO_MODE=patched nohup uvicorn app:app --port 8001 > /tmp/app.log 2>&1 &)
+          sleep 3 && curl -fsS localhost:8001/health
+      - name: VulnReplay security regression tests
+        uses: ./
+        with:
+          suite: regression-library/suite.json
+          target-url: http://localhost:8001
+          baseline: regression-library/baselines.json
+          fail-on: regression_detected,vulnerability_reproduced,execution_failed
+          sarif: vulnreplay.sarif
+        env:
+          VULNREPLAY_SECRET_OWNER_USERNAME: alice
+          VULNREPLAY_SECRET_OWNER_PASSWORD: ${{ secrets.VR_OWNER_PASSWORD || 'alice-lab-password' }}
+          VULNREPLAY_SECRET_ATTACKER_USERNAME: bob
+          VULNREPLAY_SECRET_ATTACKER_PASSWORD: ${{ secrets.VR_ATTACKER_PASSWORD || 'bob-lab-password' }}
+          VULNREPLAY_SECRET_CAROL_PASSWORD: ${{ secrets.VR_CAROL_PASSWORD || 'carol-lab-password' }}
+      - name: Upload SARIF
+        if: always() && hashFiles('vulnreplay.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: vulnreplay.sarif
+          category: vulnreplay
+
+  vulnerable-build-must-fail:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ./backend
+      - name: Start the reintroduced (vulnerable) build
+        run: |
+          (cd lab/demo_app && DEMO_MODE=vulnerable nohup uvicorn app:app --port 8001 > /tmp/app.log 2>&1 &)
+          sleep 3
+      - name: Expect regression_detected and a non-zero exit code
+        env:
+          VULNREPLAY_SECRET_OWNER_USERNAME: alice
+          VULNREPLAY_SECRET_OWNER_PASSWORD: alice-lab-password
+          VULNREPLAY_SECRET_ATTACKER_USERNAME: bob
+          VULNREPLAY_SECRET_ATTACKER_PASSWORD: bob-lab-password
+          VULNREPLAY_SECRET_CAROL_PASSWORD: carol-lab-password
+        run: |
+          set +e
+          vulnreplay run regression-library/suite.json --target-url http://localhost:8001 \
+            --baseline regression-library/baselines.json --json result.json
+          code=$?
+          set -e
+          test "$code" -eq 1
+          python -c "import json,sys; r=json.load(open('result.json'))['results']; sys.exit(0 if all(x['classification']=='regression_detected' for x in r) else 1)"
