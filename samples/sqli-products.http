@@ -1,0 +1,8 @@
+GET /api/products?q=widget' HTTP/1.1
+Host: localhost:8001
+Accept: */*
+
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+
+{"error": "sqlite3.OperationalError: unrecognized token: \"'%'\""}
