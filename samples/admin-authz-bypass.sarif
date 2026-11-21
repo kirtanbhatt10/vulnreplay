@@ -1,0 +1,56 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "PentestNotes",
+          "rules": [
+            {
+              "id": "AUTHZ-001",
+              "shortDescription": {
+                "text": "Missing function-level authorization on admin user listing"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "CWE-862"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "AUTHZ-001",
+          "level": "error",
+          "message": {
+            "text": "A regular user (bob) can list all users via the admin endpoint."
+          },
+          "webRequest": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "target": "http://localhost:8001/api/admin/users",
+            "method": "GET",
+            "headers": {
+              "Authorization": "Bearer bob-token-from-notes"
+            }
+          },
+          "webResponse": {
+            "protocol": "HTTP",
+            "version": "1.1",
+            "statusCode": 200,
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "text": "[{\"username\": \"alice\", \"role\": \"user\", \"email\": \"alice@lab.vulnreplay.test\"}, {\"username\": \"carol\", \"role\": \"admin\", \"email\": \"carol@lab.vulnreplay.test\"}]"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
