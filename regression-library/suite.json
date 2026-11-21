@@ -1,0 +1,793 @@
+{
+  "format": "vulnreplay-suite",
+  "version": "1",
+  "tests": [
+    {
+      "schema_version": "1",
+      "id": "vr-idor-api_invoices_1001",
+      "name": "IDOR: invoices readable by other users",
+      "category": "idor",
+      "severity": "high",
+      "description": "Expected: Requests for objects owned by another user are rejected and return none of the owner's data. Observed originally: HTTP 200 with 145 bytes; exposed 3 sensitive value(s)",
+      "preconditions": [
+        "Target environment is explicitly authorized for testing",
+        "Only synthetic test accounts and data are used",
+        "Test credentials are provided through VULNREPLAY_SECRET_* variables",
+        "User A owns the resource under test; User B is a distinct non-privileged user"
+      ],
+      "tags": [
+        "idor",
+        "multi-step"
+      ],
+      "variables": {},
+      "secrets": [
+        "ATTACKER_PASSWORD",
+        "ATTACKER_USERNAME",
+        "OWNER_PASSWORD",
+        "OWNER_USERNAME"
+      ],
+      "steps": [
+        {
+          "id": "login_owner",
+          "name": "authenticate owner",
+          "role": "setup",
+          "request": {
+            "method": "POST",
+            "path": "/api/login",
+            "headers": {},
+            "query": {},
+            "json": {
+              "username": "{{secret:OWNER_USERNAME}}",
+              "password": "{{secret:OWNER_PASSWORD}}"
+            },
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "values": [
+                200,
+                201
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "assert_secure": [],
+          "extract": {
+            "owner_token": {
+              "source": "json",
+              "path": "access_token"
+            }
+          },
+          "compare_fields": []
+        },
+        {
+          "id": "owner_access",
+          "name": "owner reads own resource",
+          "role": "setup",
+          "request": {
+            "method": "GET",
+            "path": "/api/invoices/1001",
+            "headers": {
+              "Authorization": "Bearer {{owner_token}}"
+            },
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [
+            {
+              "type": "status_in",
+              "description": "owner can read the resource",
+              "values": [
+                200
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "assert_secure": [],
+          "extract": {
+            "owner_marker": {
+              "source": "json",
+              "path": "owner"
+            }
+          },
+          "compare_fields": []
+        },
+        {
+          "id": "login_attacker",
+          "name": "authenticate attacker",
+          "role": "setup",
+          "request": {
+            "method": "POST",
+            "path": "/api/login",
+            "headers": {},
+            "query": {},
+            "json": {
+              "username": "{{secret:ATTACKER_USERNAME}}",
+              "password": "{{secret:ATTACKER_PASSWORD}}"
+            },
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "values": [
+                200,
+                201
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "assert_secure": [],
+          "extract": {
+            "attacker_token": {
+              "source": "json",
+              "path": "access_token"
+            }
+          },
+          "compare_fields": []
+        },
+        {
+          "id": "cross_user_access",
+          "name": "other user attempts access",
+          "role": "probe",
+          "request": {
+            "method": "GET",
+            "path": "/api/invoices/1001",
+            "headers": {
+              "Authorization": "Bearer {{attacker_token}}"
+            },
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [],
+          "assert_secure": [
+            {
+              "type": "status_in",
+              "description": "access to another principal's resource is denied",
+              "values": [
+                401,
+                403,
+                404
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #1 is not returned",
+              "values": null,
+              "value": "alice",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #2 is not returned",
+              "values": null,
+              "value": "alice@lab.vulnreplay.test",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #3 is not returned",
+              "values": null,
+              "value": "4242",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "json_path_absent",
+              "description": "field 'owner' is not returned",
+              "values": null,
+              "value": null,
+              "path": "owner",
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "json_path_absent",
+              "description": "field 'owner_email' is not returned",
+              "values": null,
+              "value": null,
+              "path": "owner_email",
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "json_path_absent",
+              "description": "field 'card_last4' is not returned",
+              "values": null,
+              "value": null,
+              "path": "card_last4",
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "value read by the owner in the control request is not exposed",
+              "values": null,
+              "value": "{{owner_marker}}",
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "extract": {},
+          "compare_fields": [
+            "owner",
+            "owner_email",
+            "card_last4"
+          ]
+        }
+      ],
+      "cleanup": [],
+      "safety": {
+        "destructive": false,
+        "max_requests": 50
+      },
+      "evidence_refs": [
+        "fe8322b955e94e23b680cd74dca9df3b#0"
+      ]
+    },
+    {
+      "schema_version": "1",
+      "id": "vr-security_headers-health",
+      "name": "Content Security Policy (CSP) Header Not Set",
+      "category": "security_headers",
+      "severity": "medium",
+      "description": "Expected: The response sets the expected browser security headers. Observed originally: no response captured",
+      "preconditions": [
+        "Target environment is explicitly authorized for testing",
+        "Only synthetic test accounts and data are used"
+      ],
+      "tags": [
+        "security_headers"
+      ],
+      "variables": {},
+      "secrets": [],
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "request": {
+            "method": "GET",
+            "path": "/health",
+            "headers": {},
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [],
+          "assert_secure": [
+            {
+              "type": "header_present",
+              "description": "Strict-Transport-Security header is set",
+              "values": null,
+              "value": null,
+              "path": null,
+              "name": "Strict-Transport-Security",
+              "expected": null
+            },
+            {
+              "type": "header_present",
+              "description": "Content-Security-Policy header is set",
+              "values": null,
+              "value": null,
+              "path": null,
+              "name": "Content-Security-Policy",
+              "expected": null
+            },
+            {
+              "type": "header_present",
+              "description": "X-Content-Type-Options header is set",
+              "values": null,
+              "value": null,
+              "path": null,
+              "name": "X-Content-Type-Options",
+              "expected": null
+            },
+            {
+              "type": "header_present",
+              "description": "X-Frame-Options header is set",
+              "values": null,
+              "value": null,
+              "path": null,
+              "name": "X-Frame-Options",
+              "expected": null
+            },
+            {
+              "type": "header_present",
+              "description": "Referrer-Policy header is set",
+              "values": null,
+              "value": null,
+              "path": null,
+              "name": "Referrer-Policy",
+              "expected": null
+            }
+          ],
+          "extract": {},
+          "compare_fields": []
+        }
+      ],
+      "cleanup": [],
+      "safety": {
+        "destructive": false,
+        "max_requests": 50
+      },
+      "evidence_refs": [
+        "e11e916b037b43c087752b65629824ba#0"
+      ]
+    },
+    {
+      "schema_version": "1",
+      "id": "vr-rate_limiting-api_password_reset",
+      "name": "No rate limit on password reset",
+      "category": "rate_limiting",
+      "severity": "high",
+      "description": "Expected: Repeated requests are throttled. Observed originally: HTTP 200 with 54 bytes",
+      "preconditions": [
+        "Target environment is explicitly authorized for testing",
+        "Only synthetic test accounts and data are used"
+      ],
+      "tags": [
+        "rate_limiting"
+      ],
+      "variables": {},
+      "secrets": [],
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "request": {
+            "method": "POST",
+            "path": "/api/password-reset",
+            "headers": {},
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 12,
+          "follow_redirects": false,
+          "expect": [],
+          "assert_secure": [
+            {
+              "type": "sequence_any_status_in",
+              "description": "throttling (HTTP 429) is enforced within 12 requests",
+              "values": [
+                429
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "extract": {},
+          "compare_fields": []
+        }
+      ],
+      "cleanup": [],
+      "safety": {
+        "destructive": false,
+        "max_requests": 50
+      },
+      "evidence_refs": [
+        "1f233955c9314dd788e00ce87a60e3f9#7"
+      ]
+    },
+    {
+      "schema_version": "1",
+      "id": "vr-sql_injection-api_products",
+      "name": "SQL error leakage in product search",
+      "category": "sql_injection",
+      "severity": "high",
+      "description": "Expected: Injected input is handled as data: no database errors and no unexpected data. Observed originally: HTTP 500 with 66 bytes",
+      "preconditions": [
+        "Target environment is explicitly authorized for testing",
+        "Only synthetic test accounts and data are used"
+      ],
+      "tags": [
+        "sql_injection"
+      ],
+      "variables": {},
+      "secrets": [],
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "request": {
+            "method": "GET",
+            "path": "/api/products",
+            "headers": {},
+            "query": {
+              "q": "widget'"
+            },
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [],
+          "assert_secure": [
+            {
+              "type": "status_not_in",
+              "description": "no server error on injected input",
+              "values": [
+                500
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'SQL syntax'",
+              "values": null,
+              "value": "SQL syntax",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'SQLSTATE'",
+              "values": null,
+              "value": "SQLSTATE",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'sqlite3.OperationalError'",
+              "values": null,
+              "value": "sqlite3.OperationalError",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'unterminated quoted string'",
+              "values": null,
+              "value": "unterminated quoted string",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'ORA-01756'",
+              "values": null,
+              "value": "ORA-01756",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'psycopg'",
+              "values": null,
+              "value": "psycopg",
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "no database error signature 'Unclosed quotation mark'",
+              "values": null,
+              "value": "Unclosed quotation mark",
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "extract": {},
+          "compare_fields": []
+        }
+      ],
+      "cleanup": [],
+      "safety": {
+        "destructive": false,
+        "max_requests": 50
+      },
+      "evidence_refs": [
+        "8b3efe0c13424332aa124c5d6f28971f#0"
+      ]
+    },
+    {
+      "schema_version": "1",
+      "id": "vr-cors_misconfiguration-api_profile",
+      "name": "CORS origin reflection with credentials",
+      "category": "cors_misconfiguration",
+      "severity": "high",
+      "description": "Expected: Untrusted origins are not granted cross-origin read access. Observed originally: HTTP 200 with 37 bytes",
+      "preconditions": [
+        "Target environment is explicitly authorized for testing",
+        "Only synthetic test accounts and data are used",
+        "Test credentials are provided through VULNREPLAY_SECRET_* variables"
+      ],
+      "tags": [
+        "cors_misconfiguration"
+      ],
+      "variables": {},
+      "secrets": [],
+      "steps": [
+        {
+          "id": "step_1",
+          "name": "replay original request",
+          "role": "probe",
+          "request": {
+            "method": "GET",
+            "path": "/api/profile",
+            "headers": {
+              "Origin": "https://untrusted-origin.vulnreplay.invalid"
+            },
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [],
+          "assert_secure": [
+            {
+              "type": "header_not_equals",
+              "description": "untrusted origin is not reflected",
+              "values": null,
+              "value": "https://untrusted-origin.vulnreplay.invalid",
+              "path": null,
+              "name": "Access-Control-Allow-Origin",
+              "expected": null
+            },
+            {
+              "type": "header_not_equals",
+              "description": "wildcard origin is not allowed",
+              "values": null,
+              "value": "*",
+              "path": null,
+              "name": "Access-Control-Allow-Origin",
+              "expected": null
+            }
+          ],
+          "extract": {},
+          "compare_fields": []
+        }
+      ],
+      "cleanup": [],
+      "safety": {
+        "destructive": false,
+        "max_requests": 50
+      },
+      "evidence_refs": [
+        "cbf92494d6a243fdb281ea4b64f14687#0"
+      ]
+    },
+    {
+      "schema_version": "1",
+      "id": "vr-authorization_bypass-api_admin_users",
+      "name": "Missing function-level authorization on admin user listing",
+      "category": "authorization_bypass",
+      "severity": "high",
+      "description": "Expected: Requests for objects owned by another user are rejected and return none of the owner's data. Observed originally: HTTP 200 with 155 bytes; exposed 1 sensitive value(s)",
+      "preconditions": [
+        "Target environment is explicitly authorized for testing",
+        "Only synthetic test accounts and data are used",
+        "Test credentials are provided through VULNREPLAY_SECRET_* variables",
+        "User A owns the resource under test; User B is a distinct non-privileged user"
+      ],
+      "tags": [
+        "authorization_bypass",
+        "multi-step"
+      ],
+      "variables": {},
+      "secrets": [
+        "ATTACKER_PASSWORD",
+        "ATTACKER_USERNAME",
+        "CAROL_PASSWORD"
+      ],
+      "steps": [
+        {
+          "id": "login_owner",
+          "name": "authenticate owner",
+          "role": "setup",
+          "request": {
+            "method": "POST",
+            "path": "/api/login",
+            "headers": {},
+            "query": {},
+            "json": {
+              "username": "carol",
+              "password": "{{secret:CAROL_PASSWORD}}"
+            },
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "values": [
+                200,
+                201
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "assert_secure": [],
+          "extract": {
+            "owner_token": {
+              "source": "json",
+              "path": "access_token"
+            }
+          },
+          "compare_fields": []
+        },
+        {
+          "id": "owner_access",
+          "name": "owner reads own resource",
+          "role": "setup",
+          "request": {
+            "method": "GET",
+            "path": "/api/admin/users",
+            "headers": {
+              "Authorization": "Bearer {{owner_token}}"
+            },
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [
+            {
+              "type": "status_in",
+              "description": "owner can read the resource",
+              "values": [
+                200
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "assert_secure": [],
+          "extract": {},
+          "compare_fields": []
+        },
+        {
+          "id": "login_attacker",
+          "name": "authenticate attacker",
+          "role": "setup",
+          "request": {
+            "method": "POST",
+            "path": "/api/login",
+            "headers": {},
+            "query": {},
+            "json": {
+              "username": "{{secret:ATTACKER_USERNAME}}",
+              "password": "{{secret:ATTACKER_PASSWORD}}"
+            },
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [
+            {
+              "type": "status_in",
+              "description": "login succeeds",
+              "values": [
+                200,
+                201
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "assert_secure": [],
+          "extract": {
+            "attacker_token": {
+              "source": "json",
+              "path": "access_token"
+            }
+          },
+          "compare_fields": []
+        },
+        {
+          "id": "cross_user_access",
+          "name": "other user attempts access",
+          "role": "probe",
+          "request": {
+            "method": "GET",
+            "path": "/api/admin/users",
+            "headers": {
+              "Authorization": "Bearer {{attacker_token}}"
+            },
+            "query": {},
+            "json": null,
+            "body": null
+          },
+          "repeat": 1,
+          "follow_redirects": false,
+          "expect": [],
+          "assert_secure": [
+            {
+              "type": "status_in",
+              "description": "access to another principal's resource is denied",
+              "values": [
+                401,
+                403,
+                404
+              ],
+              "value": null,
+              "path": null,
+              "name": null,
+              "expected": null
+            },
+            {
+              "type": "body_not_contains",
+              "description": "exposed value #1 is not returned",
+              "values": null,
+              "value": "alice@lab.vulnreplay.test",
+              "path": null,
+              "name": null,
+              "expected": null
+            }
+          ],
+          "extract": {},
+          "compare_fields": []
+        }
+      ],
+      "cleanup": [],
+      "safety": {
+        "destructive": false,
+        "max_requests": 50
+      },
+      "evidence_refs": [
+        "0f6471331ea44fdeb071b0a39bd5f7a6#0"
+      ]
+    }
+  ]
+}
