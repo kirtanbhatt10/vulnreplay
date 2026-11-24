@@ -170,22 +170,6 @@ Bring security regression testing into development workflows.
 
 ---
 
-## 🖥️ Product Preview
-
-> Replace these placeholders with screenshots of your actual running application.
-
-| Dashboard | Vulnerability Analysis |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Analysis](docs/screenshots/analysis.png) |
-| *Security overview* | *Evidence investigation* |
-
-| Attack Replay | Regression Results |
-|---|---|
-| ![Replay](docs/screenshots/replay.png) | ![Results](docs/screenshots/results.png) |
-| *Attack reconstruction* | *Before/after comparison* |
-
----
-
 ## 🏗️ System Architecture
 
 ```mermaid
@@ -301,7 +285,7 @@ VulnReplay/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/vulnreplay.git
+git clone https://github.com/kirtanbhatt10/vulnreplay.git
 
 cd vulnreplay
 ```
