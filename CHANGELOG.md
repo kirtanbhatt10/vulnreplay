@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses semantic versioning.
 
+## [0.1.1] - 2026-11-24
+
+### Fixed
+- CI: the `pip-audit` step now upgrades the audit virtualenv's own `pip` before auditing. Every earlier CI run
+  failed because the bundled `pip` 25.0.1 has known advisories, which also kept the Playwright job from running.
+- README: corrected setup commands (`pip install -e ".[dev]"`, `uvicorn vulnreplay.main:app`, `/api/docs`, the
+  required `VULNREPLAY_ADMIN_PASSWORD` for Docker Compose) and the project structure.
+
+### Changed
+- Frontend pages are lazy-loaded, so the initial JavaScript bundle drops from 571 kB to 277 kB and the Vite
+  chunk-size warning is gone.
+- README now documents environment variables, an example replay, CLI and API usage, integrations and security
+  limitations.
+
 ## [0.1.0] - 2026-11-21
 
 ### Added
