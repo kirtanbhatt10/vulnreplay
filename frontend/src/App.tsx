@@ -1,18 +1,21 @@
+import { lazy, Suspense } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { Loading } from './components/ui';
-import CiCd from './pages/CiCd';
-import Comparison from './pages/Comparison';
-import EvidencePage from './pages/Evidence';
-import Execution from './pages/Execution';
-import Findings from './pages/Findings';
-import Generator from './pages/Generator';
-import Library from './pages/Library';
 import Login from './pages/Login';
-import Overview from './pages/Overview';
-import Projects from './pages/Projects';
-import Scenarios from './pages/Scenarios';
-import SettingsPage from './pages/Settings';
 import { useSession } from './state';
+
+// Pages are code-split so the initial bundle stays small; React Flow only loads with the pages that use it.
+const CiCd = lazy(() => import('./pages/CiCd'));
+const Comparison = lazy(() => import('./pages/Comparison'));
+const EvidencePage = lazy(() => import('./pages/Evidence'));
+const Execution = lazy(() => import('./pages/Execution'));
+const Findings = lazy(() => import('./pages/Findings'));
+const Generator = lazy(() => import('./pages/Generator'));
+const Library = lazy(() => import('./pages/Library'));
+const Overview = lazy(() => import('./pages/Overview'));
+const Projects = lazy(() => import('./pages/Projects'));
+const Scenarios = lazy(() => import('./pages/Scenarios'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
 
 export const NAV = [
   { to: '/', label: 'Overview', icon: '◎' },
@@ -65,6 +68,7 @@ function Shell() {
           <span className="ml-auto text-xs text-slate-500">Only test environments you are authorized to test.</span>
         </header>
         <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+          <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/projects" element={<Projects />} />
@@ -79,6 +83,7 @@ function Shell() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </main>
       </div>
     </div>
