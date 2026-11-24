@@ -226,48 +226,33 @@ flowchart TB
 ## 📁 Project Structure
 
 ```text
-VulnReplay/
-│
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── core/
-│   │   ├── services/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── security/
-│   │   └── main.py
-│   │
+vulnreplay/
+├── backend/                 FastAPI service, CLI, Alembic migrations
+│   ├── vulnreplay/
+│   │   ├── api/             REST routes (auth, projects, evidence, tests, executions)
+│   │   ├── importers/       Burp, ZAP, HAR, SARIF, raw HTTP, JSON and JSONL parsers
+│   │   ├── execution/       Execution engine and target guard (allowlist, SSRF, redirects)
+│   │   ├── reports/         HTML, PDF and JSON report generation
+│   │   ├── scenarios.py     Attack scenario reconstruction
+│   │   ├── generator.py     Test generation (JSON, Pytest/HTTPX, Playwright)
+│   │   ├── regression.py    Before/after comparison and classification
+│   │   ├── ai.py            Optional evidence-grounded assistant
+│   │   ├── cli.py           `vulnreplay` command-line interface
+│   │   └── main.py          Application entry point
+│   ├── migrations/
 │   └── tests/
-│
-├── frontend/
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── services/
-│       ├── hooks/
-│       └── types/
-│
-├── examples/
-│   ├── vulnerable-app/
-│   └── patched-app/
-│
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── THREAT_MODEL.md
-│   ├── TESTING.md
-│   └── API_REFERENCE.md
-│
-├── .github/
-│   └── workflows/
-│
-├── docker-compose.yml
-├── .env.example
-├── CONTRIBUTING.md
-├── SECURITY.md
-├── CHANGELOG.md
-├── LICENSE
-└── README.md
+├── frontend/                React + TypeScript + Vite + Tailwind CSS
+│   ├── src/pages/           The eleven application pages
+│   ├── src/test/            Vitest component tests
+│   └── e2e/                 Playwright end-to-end tests
+├── lab/demo_app/            Deliberately vulnerable demo app (vulnerable, partial, patched modes)
+├── samples/                 Synthetic evidence files for every supported format
+├── regression-library/      Exported regression suite and baselines used by CI
+├── scripts/seed_demo.py     Seeds a running instance with the full demo walkthrough
+├── docs/                    Architecture, threat model, testing, API, deployment, integrations
+├── .github/workflows/       CI and security-regression workflows
+├── action.yml               Reusable GitHub Action
+└── docker-compose.yml       Local lab: backend, frontend, PostgreSQL, three demo apps
 ```
 
 ---
@@ -278,136 +263,165 @@ VulnReplay/
 
 - Python 3.11+
 - Node.js 20+
-- PostgreSQL
+- PostgreSQL 16 (SQLite works for local development)
 - Git
-- Docker (recommended)
+- Docker and Docker Compose (for the one-command lab)
 
-### 1. Clone the repository
+### Option A: One-command lab with Docker
 
 ```bash
 git clone https://github.com/kirtanbhatt10/vulnreplay.git
-
 cd vulnreplay
+VULNREPLAY_ADMIN_PASSWORD='choose-a-long-password' docker compose up --build
 ```
 
-### 2. Configure the backend
+- UI: http://localhost:8080 (sign in as `admin@vulnreplay.local`)
+- API docs: http://localhost:8000/api/docs
+
+Load the demo walkthrough (vulnerable baseline, partial fix, real fix, reintroduced regression):
+
+```bash
+VULNREPLAY_ADMIN_PASSWORD='choose-a-long-password' python scripts/seed_demo.py --lab-host-style compose
+```
+
+The demo apps run on an internal-only Docker network with no published ports and only synthetic data.
+
+### Option B: Run natively
+
+**Backend**
 
 ```bash
 cd backend
-
-python -m venv venv
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+cp ../.env.example .env            # then set VULNREPLAY_ADMIN_PASSWORD
+alembic upgrade head
+uvicorn vulnreplay.main:app --reload --port 8000
 ```
 
-Activate the environment.
-
-**Windows:**
-
-```powershell
-venv\Scripts\activate
-```
-
-**Linux / macOS:**
+**Demo lab apps** (optional, in separate terminals from `lab/demo_app`)
 
 ```bash
-source venv/bin/activate
+DEMO_MODE=vulnerable uvicorn app:app --port 8001
+DEMO_MODE=patched    uvicorn app:app --port 8002
+DEMO_MODE=partial    uvicorn app:app --port 8003
 ```
 
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Configure environment variables using the provided `.env.example`.
-
-### 3. Start the backend
-
-```bash
-uvicorn app.main:app --reload
-```
-
-API:
-
-```text
-http://localhost:8000
-```
-
-Interactive API documentation:
-
-```text
-http://localhost:8000/docs
-```
-
-### 4. Start the frontend
-
-Open another terminal:
+**Frontend**
 
 ```bash
 cd frontend
-
-npm install
-
-npm run dev
+npm ci
+npm run dev                         # http://localhost:5173, proxies /api to :8000
 ```
 
-Frontend:
+### Environment variables
 
-```text
-http://localhost:5173
-```
+All backend settings use the `VULNREPLAY_` prefix. See [`.env.example`](.env.example) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-### 5. Start with Docker
+| Variable | Purpose | Default |
+|---|---|---|
+| `VULNREPLAY_DATABASE_URL` | SQLAlchemy URL, e.g. `postgresql+psycopg://user:pass@host/db` | `sqlite:///./vulnreplay.db` |
+| `VULNREPLAY_SECRET_KEY` | JWT signing key; 32+ random characters required in production | development placeholder |
+| `VULNREPLAY_ENVIRONMENT` | `development`, `test` or `production` | `development` |
+| `VULNREPLAY_ADMIN_EMAIL` / `VULNREPLAY_ADMIN_PASSWORD` | Bootstrap administrator, created only when no users exist | unset |
+| `VULNREPLAY_ALLOWED_HOSTS` | JSON list of hosts tests may ever reach | `["localhost","127.0.0.1","::1"]` |
+| `VULNREPLAY_CORS_ORIGINS` | JSON list of allowed UI origins (no wildcard in production) | local dev origins |
+| `VULNREPLAY_MAX_UPLOAD_BYTES` | Evidence upload size limit | 5 MiB |
+| `VULNREPLAY_MAX_REQUESTS_PER_EXECUTION` | Request budget per execution | 200 |
+| `VULNREPLAY_LLM_BASE_URL` | Optional Ollama-compatible local LLM; empty means deterministic analysis only | unset |
+| `VULNREPLAY_SECRET_<NAME>` | Test credentials referenced in tests as `{{secret:NAME}}`, never stored or reported | unset |
 
-From the project root:
+---
+
+## 🎬 Example Vulnerability Replay
+
+The demo lab reproduces an IDOR on `GET /api/invoices/{id}`, in which Bob can read Alice's invoice. Running the
+seed script and then the IDOR regression test gives this history:
+
+| Release | Demo mode | Classification |
+|---|---|---|
+| baseline | `vulnerable` | `vulnerability_reproduced` |
+| hotfix-1 | `partial` (returns 403 but still serializes the invoice) | `vulnerability_reproduced` |
+| hotfix-2 | `patched` | `remediation_verified` |
+| release-2.4 | `vulnerable` again | `regression_detected` |
+
+Hotfix-1 shows why a status-code change alone is never treated as proof of remediation: VulnReplay still finds
+Alice's data in the 403 response body.
+
+---
+
+## 💻 CLI Usage
 
 ```bash
-docker compose up --build
+vulnreplay import-check samples/idor-invoice-burp.xml     # parse evidence without storing it
+vulnreplay validate regression-library/suite.json          # validate an exported suite
+vulnreplay run regression-library/suite.json \
+  --target-url http://localhost:8002 \
+  --baseline regression-library/baselines.json \
+  --fail-on regression_detected,vulnerability_reproduced,execution_failed \
+  --json results.json --sarif results.sarif
 ```
+
+`run` exits `0` when no configured classification occurs, `1` when one does, and `2` for configuration
+errors, such as a target outside the allowlist.
+
+---
+
+## 🔌 API Usage
+
+```bash
+TOKEN=$(curl -s -X POST localhost:8000/api/v1/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"admin@vulnreplay.local","password":"<password>"}' | jq -r .access_token)
+
+curl -s -H "Authorization: Bearer $TOKEN" localhost:8000/api/v1/dashboard
+curl -s -H "Authorization: Bearer $TOKEN" -F file=@samples/cors-reflection.har \
+  localhost:8000/api/v1/projects/<project_id>/evidence
+curl -s -H "Authorization: Bearer $TOKEN" "localhost:8000/api/v1/tests/<test_id>/report?format=pdf" -o report.pdf
+```
+
+The full reference is in [docs/API_REFERENCE.md](docs/API_REFERENCE.md), and interactive docs are at `/api/docs`.
+
+---
+
+## 🔗 Integrations
+
+**GitHub Actions**: run the saved regression library on every pull request:
+
+```yaml
+- uses: kirtanbhatt10/vulnreplay@main
+  with:
+    suite: regression-library/suite.json
+    target-url: http://localhost:8001
+    baseline: regression-library/baselines.json
+    fail-on: regression_detected,vulnerability_reproduced,execution_failed
+  env:
+    VULNREPLAY_SECRET_OWNER_PASSWORD: ${{ secrets.VR_OWNER_PASSWORD }}
+```
+
+Results are written as JSON and SARIF 2.1.0 (uploadable to GitHub code scanning). Supported evidence sources are
+Burp Suite XML exports, OWASP ZAP JSON reports, HAR, SARIF, raw HTTP and JSON/JSONL incident logs. See
+[docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
 
 ---
 
 ## 🧪 Testing & Quality Assurance
 
-VulnReplay is designed around reproducible security testing.
-
-The test suite should cover:
-
-| Test category | Objective |
-|---|---|
-| Unit tests | Validate individual components |
-| Integration tests | Verify module interactions |
-| API tests | Validate backend endpoints |
-| E2E tests | Verify complete workflows |
-| Security tests | Test platform security controls |
-| Regression tests | Detect previously fixed vulnerabilities |
-
-Run backend tests:
+| Suite | Location | Tests |
+|---|---|---|
+| Backend unit, integration and security | `backend/tests` | 74 |
+| Frontend component and integration | `frontend/src/test` | 10 |
+| Browser end-to-end (Playwright) | `frontend/e2e` | 9 |
 
 ```bash
-cd backend
-pytest
+cd backend && pytest && ruff check . && mypy && bandit -r vulnreplay -c pyproject.toml && pip-audit
+cd frontend && npm test && npm run build && npm audit
+E2E_PASSWORD='<admin password>' npx playwright test   # against a running, seeded stack
 ```
 
-Run frontend tests:
-
-```bash
-cd frontend
-npm test
-```
-
-Run the production build:
-
-```bash
-npm run build
-```
-
-Run Python linting:
-
-```bash
-ruff check .
-```
-
-Test results should be published only after actual execution.
+Executed results and environment limitations are recorded in [docs/TESTING.md](docs/TESTING.md).
 
 ---
 
@@ -417,39 +431,51 @@ VulnReplay is designed for authorized application security testing.
 
 Security controls include:
 
-- Explicit target authorization.
-- Target allowlisting.
-- SSRF and DNS rebinding protection.
-- Request rate limiting.
-- Secure credential management.
-- Safe evidence handling.
-- Execution timeouts.
+- Explicit, admin-approved target authorization on top of an operator allowlist.
+- SSRF and DNS rebinding protection: every resolved address is revalidated and pinned per request.
+- Redirects to unapproved destinations are never followed.
+- Request budgets, throttling, timeouts, response size caps and cancellation.
+- Role-based access control (admin, analyst, viewer) and login/API rate limiting.
+- Test credentials injected from the environment and redacted from logs, results and reports.
+- Uploaded evidence is validated, size-limited, sanitized, fingerprinted and never executed.
+- Human approval is required before AI-generated tests can run.
 - Audit logging.
-- Human approval for AI-generated tests.
-- No execution of uploaded scripts.
 
 **Never test systems without appropriate authorization.**
+
+### Security limitations
+
+- VulnReplay verifies the specific behaviour a test encodes. A passing suite doesn't prove an application is free of vulnerabilities.
+- Timing comparisons are informational and can be noisy on shared infrastructure.
+- The optional AI assistant can be wrong. Its output is labelled as facts, hypotheses, suggestions and unknowns, and it never runs tests itself.
+- The demo lab is deliberately vulnerable and must never be exposed to a network you don't control.
+
+See [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) and [docs/SECURITY.md](docs/SECURITY.md).
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Evidence import engine
-- [ ] HTTP request/response parser
-- [ ] Attack scenario reconstruction
-- [ ] Security test generation
-- [ ] Vulnerability regression engine
-- [ ] Multi-step attack replay
-- [ ] IDOR and authorization verification
-- [ ] AI-assisted security analysis
-- [ ] Regression test library
-- [ ] Professional security dashboard
-- [ ] GitHub Actions integration
-- [ ] Burp Suite-compatible integration
-- [ ] OWASP ZAP integration
-- [ ] SARIF reporting
-- [ ] Docker deployment
-- [ ] Complete security audit
+**Implemented in 0.1.0**
+
+- [x] Evidence import engine (Burp, ZAP, HAR, SARIF, raw HTTP, JSON, JSONL)
+- [x] Attack scenario reconstruction and multi-step replay
+- [x] Test generation (JSON, Pytest/HTTPX, Playwright)
+- [x] Regression engine with incomplete-remediation detection
+- [x] Regression library with versioning and approval
+- [x] Optional evidence-grounded AI assistant
+- [x] Dashboard with eleven pages
+- [x] CLI, GitHub Action, JSON and SARIF output
+- [x] HTML, PDF and JSON reports
+- [x] Docker Compose lab
+
+**Next**
+
+- [ ] Direct Burp Suite extension and OWASP ZAP add-on
+- [ ] GraphQL and WebSocket replay
+- [ ] Scheduled regression runs against staging
+- [ ] SSO (OIDC) and per-project roles
+- [ ] Published container images
 
 ---
 
