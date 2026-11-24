@@ -55,7 +55,8 @@ jobs:
           alembic upgrade head && alembic check
       - name: pip-audit (project dependencies only)
         run: |
-          python -m venv /tmp/audit && /tmp/audit/bin/pip install -q . pip-audit
+          python -m venv /tmp/audit && /tmp/audit/bin/python -m pip install -q --upgrade pip
+          /tmp/audit/bin/pip install -q . pip-audit
           /tmp/audit/bin/pip-audit -l --skip-editable
 
   frontend:
