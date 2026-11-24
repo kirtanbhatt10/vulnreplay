@@ -71,6 +71,23 @@ PostgreSQL 16).
 | `actionlint` on both workflows | clean |
 | `docker compose config` | valid |
 
+## Re-verification (2026-11-24)
+
+Executed again on the published repository (Linux, Python 3.13.18, Node 22.23.5, PostgreSQL 16):
+
+| Check | Result |
+| --- | --- |
+| `pytest` (fresh virtualenv) | 74 passed (same upstream Starlette deprecation warning) |
+| `ruff check` / `ruff format --check` / `mypy` / `bandit` / `pip-audit` | clean / clean / no issues / 0 issues / no known vulnerabilities |
+| `vitest run` / `tsc -b` / `npm audit` | 10 passed / no errors / 0 vulnerabilities |
+| `vite build` | success; initial bundle 277 kB after page code-splitting (was 571 kB with a chunk-size warning) |
+| Playwright E2E, backend in `development` and in `production` mode on PostgreSQL | 9 passed each |
+| `scripts/seed_demo.py` | 13 executions; IDOR history `vulnerability_reproduced` → `vulnerability_reproduced` (partial fix) → `remediation_verified` → `regression_detected` |
+| Reports (JSON, HTML, PDF) | generated; all three contain evidence SHA-256 fingerprints; no lab passwords, admin password or JWTs found in any of them |
+| CLI against the lab | patched → exit 0; vulnerable → exit 1 (6 failing); partial → exit 1 (IDOR still detected); non-allowlisted host refused |
+| GitHub Actions `ci` (runs #17–#20) | backend, frontend and e2e jobs all passed on GitHub |
+| GitHub Actions `security-regression` | passing on every push |
+
 ## Environmental limitations
 
 * **Docker images couldn't be built or started** in the build environment: its network proxy blocks Docker
@@ -80,7 +97,8 @@ PostgreSQL 16).
   executed.
 * **Playwright's bundled Chromium couldn't be downloaded** (CDN blocked), so the E2E suite ran on the
   locally installed Google Chrome via `PW_CHROME_PATH`. CI installs Playwright's Chromium normally.
-* **GitHub Actions workflows haven't been run on GitHub yet.** They were linted with actionlint, and their
-  commands were exercised locally.
+* **GitHub Actions** now run on every push. CI runs #1–#16 failed at the `pip-audit` step because the audit
+  virtualenv's bundled `pip` 25.0.1 had known advisories (VulnReplay's own dependencies were clean), which also
+  skipped the e2e job. The step now upgrades `pip` first, and runs #17 onward pass all three jobs.
 * **No local LLM was available.** The Ollama integration is covered by code review and its fallback path,
   not by a live model run.
